@@ -4,56 +4,25 @@ import './App.css'
 const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 const emptyProduct = { product_name: '', description: '', price: '', quantity: '' }
 
-function readStoredUser() {
-  try {
-    const rawUser = sessionStorage.getItem('user')
-    return rawUser ? JSON.parse(rawUser) : null
-  } catch {
-    sessionStorage.removeItem('user')
-    return null
-  }
-}
-
 async function request(path, { token, ...options } = {}) {
-  try {
-    const response = await fetch(`${API_URL}${path}`, {
-      ...options,
-      headers: {
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
-    })
-
-    const rawText = await response.text()
-    let data = {}
-
-    try {
-      data = rawText ? JSON.parse(rawText) : {}
-    } catch {
-      data = {}
-    }
-
-    if (!response.ok) {
-      const message = data.error || data.message || 'Request failed. Check the API connection and try again.'
-      throw new Error(message)
-    }
-
-    return data
-  } catch (error) {
-    if (error instanceof TypeError || error instanceof Error && /fetch|Failed to fetch/i.test(error.message)) {
-      throw new Error(`Unable to reach the API at ${API_URL}. Start the PHP backend or update VITE_API_URL.`)
-    }
-    throw error
-  }
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(data.error || 'Request failed. Check the API connection and try again.')
+  return data
 }
 
 function App() {
   const [token, setToken] = useState(() => sessionStorage.getItem('access_token') || '')
-  const [user, setUser] = useState(() => readStoredUser())
+  const [user, setUser] = useState(() => JSON.parse(sessionStorage.getItem('user') || 'null'))
   const [products, setProducts] = useState([])
   const [login, setLogin] = useState({ email: '', password: '' })
-  const [showPassword, setShowPassword] = useState(false)
   const [editing, setEditing] = useState(null)
   const [productForm, setProductForm] = useState(emptyProduct)
   const [busy, setBusy] = useState(false)
@@ -183,13 +152,13 @@ function App() {
       <main className="login-layout">
         <section className="login-panel">
           <div className="login-card">
-            <div className="brand login-brand"><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4.5 6.3v11.4L12 21.5l7.5-3.8V6.3L12 2.5Zm5.5 4.8-5.5 2.8-5.5-2.8L12 4.2l5.5 3.1Zm-11 3.4 4.5 2.3v5.6l-4.5-2.3V10.7Zm6 8 4.5-2.3v-5.6l4.5 2.3v5.6Z" fill="currentColor"/></svg></span><span className="brand-name"><span className="brand-lava">LAVA</span><span className="brand-lust">LUST</span></span></div>
+            <div className="brand login-brand"><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4.5 6.3v11.4L12 21.5l7.5-3.8V6.3L12 2.5Zm5.5 4.8-5.5 2.8-5.5-2.8L12 4.2l5.5 3.1Zm-11 3.4 4.5 2.3v5.6l-4.5-2.3V10.7Zm6 8 4.5-2.3v-5.6l-4.5 2.3v5.6Z" fill="currentColor"/></svg></span> ITEMHUB</div>
             <h2>Welcome back</h2>
             <p className="muted">Use your product account to continue.</p>
             {error && <div className="alert" role="alert">{error}</div>}
             <form onSubmit={signIn} className="form-stack">
               <label>Email address<input type="email" autoComplete="username" required value={login.email} onChange={(event) => setLogin({ ...login, email: event.target.value })} placeholder="you@company.com" /></label>
-              <label>Password<div className="password-input-wrap"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={login.password} onChange={(event) => setLogin({ ...login, password: event.target.value })} placeholder="Your password" /><button className="password-toggle" type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" />{showPassword && <path d="m4 4 16 16" />}</svg></button></div></label>
+              <label>Password<input type="password" autoComplete="current-password" required value={login.password} onChange={(event) => setLogin({ ...login, password: event.target.value })} placeholder="Your password" /></label>
               <button className="button button-dark button-wide" disabled={busy}>{busy ? 'Signing in...' : 'Sign in'} <span aria-hidden="true">→</span></button>
             </form>
           </div>
@@ -200,12 +169,11 @@ function App() {
 
   const totalUnits = products.reduce((total, product) => total + Number(product.quantity || 0), 0)
   const inventoryValue = products.reduce((total, product) => total + Number(product.price || 0) * Number(product.quantity || 0), 0)
-  const formatPeso = (value) => `₱${Number(value).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
   return (
     <main className="app-shell">
       <header className="topbar">
-        <a className="brand" href="#top"><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4.5 6.3v11.4L12 21.5l7.5-3.8V6.3L12 2.5Zm5.5 4.8-5.5 2.8-5.5-2.8L12 4.2l5.5 3.1Zm-11 3.4 4.5 2.3v5.6l-4.5-2.3V10.7Zm6 8 4.5-2.3v-5.6l-4.5 2.3v5.6Z" fill="currentColor"/></svg></span><span className="brand-name"><span className="brand-lava">LAVA</span><span className="brand-lust">LUST</span></span></a>
+        <a className="brand" href="#top"><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4.5 6.3v11.4L12 21.5l7.5-3.8V6.3L12 2.5Zm5.5 4.8-5.5 2.8-5.5-2.8L12 4.2l5.5 3.1Zm-11 3.4 4.5 2.3v5.6l-4.5-2.3V10.7Zm6 8 4.5-2.3v-5.6l-4.5 2.3v5.6Z" fill="currentColor"/></svg></span> ITEMHUB</a>
         <div className="topbar-right"><span className="user-chip">{user?.username || user?.email}</span><button className="button button-quiet" onClick={() => signOut()}>Log out <span aria-hidden="true">↗</span></button></div>
       </header>
       <section className="workspace" id="top">
@@ -218,7 +186,7 @@ function App() {
         <div className="metric-strip">
           <div className="metric"><span>CATALOG ITEMS</span><strong>{products.length}</strong></div>
           <div className="metric"><span>UNITS IN STOCK</span><strong>{totalUnits.toLocaleString()}</strong></div>
-          <div className="metric"><span>INVENTORY VALUE</span><strong>{formatPeso(inventoryValue)}</strong></div>
+          <div className="metric"><span>INVENTORY VALUE</span><strong>${inventoryValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
           <div className="metric metric-date"><span>WORKSPACE</span><strong>{new Intl.DateTimeFormat('en', { month: 'short', day: '2-digit', year: 'numeric' }).format(new Date())}</strong></div>
         </div>
         <div className="catalog-heading"><div><p className="eyebrow">ALL PRODUCTS</p><h2>Catalog</h2></div><span className="catalog-meta">{products.length} {products.length === 1 ? 'RECORD' : 'RECORDS'}</span></div>
@@ -228,7 +196,7 @@ function App() {
             {products.map((product, index) => (
               <tr key={product.id} style={{ animationDelay: `${index * 35}ms` }}>
                 <td><div className="product-name"><span className="product-index">{String(index + 1).padStart(2, '0')}</span><strong>{product.product_name}</strong></div></td>
-                <td className="description-cell">{product.description || '—'}</td><td className="price-cell">{formatPeso(product.price)}</td>
+                <td className="description-cell">{product.description || '—'}</td><td className="price-cell">${Number(product.price).toFixed(2)}</td>
                 <td><span className={`quantity ${Number(product.quantity) < 5 ? 'low-stock' : ''}`}>{product.quantity} <small>units</small></span></td>
                 <td className="date-cell">{product.created_at ? new Date(product.created_at).toLocaleDateString() : '—'}</td>
                 <td><div className="row-actions"><button className="icon-button" onClick={() => beginEdit(product)} aria-label={`Edit ${product.product_name}`}>Edit</button><button className="icon-button danger-action" onClick={() => deleteProduct(product)} aria-label={`Delete ${product.product_name}`}>Delete</button></div></td>
