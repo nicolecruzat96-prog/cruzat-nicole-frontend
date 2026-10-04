@@ -39,6 +39,12 @@
 .form-stack { display: grid; gap: 19px; }
 .form-stack label { display: grid; gap: 8px; color: #b7c0cc; font-size: 12px; font-weight: 600; }
 .form-stack input, .form-stack textarea { width: 100%; border: 1px solid var(--line); border-radius: 4px; background: #0b0f16; padding: 12px 13px; color: var(--ink); font-size: 14px; font-weight: 400; resize: vertical; }
+.password-input-wrap { position: relative; }
+.password-input-wrap input { padding-right: 44px; }
+.password-toggle { position: absolute; top: 50%; right: 7px; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; transform: translateY(-50%); border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
+.password-toggle:hover, .password-toggle:focus-visible { color: var(--accent); }
+.password-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.password-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .form-stack input::placeholder, .form-stack textarea::placeholder { color: #5b6472; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 11px; min-height: 42px; padding: 0 16px; border: 1px solid transparent; border-radius: 4px; font-size: 12px; font-weight: 600; transition: background .18s ease, color .18s ease, border-color .18s ease; }
 .button:disabled { cursor: wait; opacity: .65; }

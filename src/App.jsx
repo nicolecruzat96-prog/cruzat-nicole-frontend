@@ -53,6 +53,7 @@ function App() {
   const [user, setUser] = useState(() => readStoredUser())
   const [products, setProducts] = useState([])
   const [login, setLogin] = useState({ email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
   const [editing, setEditing] = useState(null)
   const [productForm, setProductForm] = useState(emptyProduct)
   const [busy, setBusy] = useState(false)
@@ -188,7 +189,7 @@ function App() {
             {error && <div className="alert" role="alert">{error}</div>}
             <form onSubmit={signIn} className="form-stack">
               <label>Email address<input type="email" autoComplete="username" required value={login.email} onChange={(event) => setLogin({ ...login, email: event.target.value })} placeholder="you@company.com" /></label>
-              <label>Password<input type="password" autoComplete="current-password" required value={login.password} onChange={(event) => setLogin({ ...login, password: event.target.value })} placeholder="Your password" /></label>
+              <label>Password<div className="password-input-wrap"><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={login.password} onChange={(event) => setLogin({ ...login, password: event.target.value })} placeholder="Your password" /><button className="password-toggle" type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" />{showPassword && <path d="m4 4 16 16" />}</svg></button></div></label>
               <button className="button button-dark button-wide" disabled={busy}>{busy ? 'Signing in...' : 'Sign in'} <span aria-hidden="true">→</span></button>
             </form>
           </div>
